@@ -18,6 +18,7 @@ def get_node(df: pd.DataFrame, state: str, memo: Dict[str, pd.DataFrame] = MEMO)
     memo[state] = nodes
     return nodes
 
+
 def run_greedy(df: pd.DataFrame, initial: str, goal: str) -> None:
     print(get_node(df, initial))
 
