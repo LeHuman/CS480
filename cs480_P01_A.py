@@ -62,21 +62,23 @@ def run_greedy(initial: str, goal: str) -> list[node]:
     initial_state = get_dnode(initial)
     goal_state = get_dnode(goal)
     queue = PriorityQueue()
-    visited: set[edge] = set()
+    visited_e: set[edge] = set()
+    visited_n: set[node] = set()
     visited_l: list[node] = []
     queue.put(edge(initial_state, 0))
     while not queue.empty():
         curr_edge: edge = queue.get()
         curr_state: node = curr_edge.state
-        if curr_state in visited:
+        if curr_state in visited_n:
             continue
-        visited.add(curr_edge)
+        visited_e.add(curr_edge)
+        visited_n.add(curr_state)
         visited_l.append(curr_state)
         if curr_state is goal_state:
             break
         for next_edge in curr_state.edges:
-            last_visit = visited.intersection({next_edge}) # last visit if it exists
-            if (next_edge not in visited) or (last_visit and (next_edge < last_visit.pop())):  # check if already visited or if cost is less than last visit?
+            last_visit = visited_e.intersection({next_edge})  # last visit if it exists
+            if (next_edge.state not in visited_n) or (last_visit and (next_edge < last_visit.pop())):  # check if already visited or if cost is less than last visit?
                 queue.put(next_edge)
     return visited_l
 
@@ -117,23 +119,7 @@ def main() -> None:
     gen_graph(df, DMEMO)
     gen_graph(sf, SMEMO)
 
-    # for i, v in df.iterrows():
-    #     i = 0
-    #     nd = get_node(str(v[0]), DMEMO)
-    #     for x in v[1:]:
-    #         if x > 0:
-    #             nd.connect(get_node(df_i[i], DMEMO), x)
-    #         i += 1
-
-    # global DMEMO
-    # DMEMO = {str(v[1].iloc[0]): hlist(v[1].iloc[1:][v[1].iloc[1:] > 0].convert_dtypes(int).sort_values()).set_id(str(v[1].iloc[0])) for v in df.iterrows()}
-    # global SMEMO
-    # SMEMO = {str(v[1].iloc[0]): hlist(v[1].iloc[1:][v[1].iloc[1:] > 0].convert_dtypes(int).sort_values()).set_id(str(v[1].iloc[0])) for v in sf.iterrows()}
-
-    # print(df)
-
-    run_greedy(args.initial_state[0], args.goal_state[0])
-    # print(", ".join([str(x) for x in run_greedy(args.initial_state[0], args.goal_state[0])]))
+    print(", ".join([str(x) for x in run_greedy(args.initial_state[0], args.goal_state[0])]))
 
 
 if __name__ == "__main__":
