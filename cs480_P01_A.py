@@ -14,6 +14,9 @@ class edge():
         self.state = state
         self.val = val
 
+    def __hash__(self):
+        return hash(self.state)
+
     def __str__(self) -> str:
         return f"{str(self.state)}:{str(self.val)}"
 
@@ -55,26 +58,27 @@ def get_snode(state: str) -> node:
     return SMEMO[state]
 
 
-def run_greedy(initial: str, goal: str) -> set[node]:
+def run_greedy(initial: str, goal: str) -> list[node]:
     initial_state = get_dnode(initial)
     goal_state = get_dnode(goal)
     queue = PriorityQueue()
-    visited: set[node] = set()
+    visited: set[edge] = set()
+    visited_l: list[node] = []
     queue.put(edge(initial_state, 0))
     while not queue.empty():
-        curr_state: node = queue.get().state
+        curr_edge: edge = queue.get()
+        curr_state: node = curr_edge.state
         if curr_state in visited:
             continue
+        visited.add(curr_edge)
+        visited_l.append(curr_state)
         if curr_state is goal_state:
-            # print(f"done {goal_state}")
             break
-        visited.add(curr_state)
-        # print(curr_state)
-        for edg in curr_state.edges:
-            # print("\t", edg)
-            if edg.state not in visited:
-                queue.put(edg)
-    return visited
+        for next_edge in curr_state.edges:
+            last_visit = visited.intersection({next_edge}) # last visit if it exists
+            if (next_edge not in visited) or (last_visit and (next_edge < last_visit.pop())):  # check if already visited or if cost is less than last visit?
+                queue.put(next_edge)
+    return visited_l
 
 
 def gen_graph(df: pd.DataFrame, memo: dict[str, node]):
@@ -128,7 +132,8 @@ def main() -> None:
 
     # print(df)
 
-    print(", ".join([str(x) for x in run_greedy(args.initial_state[0], args.goal_state[0])]))
+    run_greedy(args.initial_state[0], args.goal_state[0])
+    # print(", ".join([str(x) for x in run_greedy(args.initial_state[0], args.goal_state[0])]))
 
 
 if __name__ == "__main__":
