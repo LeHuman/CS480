@@ -26,13 +26,12 @@ class node():
     edges: list[edge] = None
 
     def __init__(self, uid) -> None:
-        self.priority = 0
         self.uid = uid
         self.edges = list()
 
     def connect(self, neighbor, value) -> None:
         self.edges.append(edge(neighbor, value))
-        self.edges.sort()
+        self.edges.sort()  # Helpful for visualize
 
     def __hash__(self):
         return hash(self.uid)
@@ -41,7 +40,7 @@ class node():
         return str(self.uid)
 
     def __repr__(self) -> str:
-        return f"{self.uid}"  # :{[str(x) for x in self.edges]}
+        return f"{self.uid}:{[str(x) for x in self.edges]}"
 
 
 DMEMO: dict[str, node] = {}
@@ -57,30 +56,32 @@ def get_snode(state: str) -> node:
     global SMEMO
     return SMEMO[state]
 
+# Initial: MA | Goal: MD | Path: ['MA', 'NY', 'PA', 'MD']
+# Path cost: 575 miles
+
 
 def run_greedy(initial: str, goal: str) -> list[node]:
     initial_state = get_dnode(initial)
     goal_state = get_dnode(goal)
+    goal_h = get_snode(goal_state.uid).edges
     queue = PriorityQueue()
-    visited_e: set[edge] = set()
-    visited_n: set[node] = set()
-    visited_l: list[node] = []
-    queue.put(edge(initial_state, 0))
+    visited_e: dict[str, edge] = {}
+    visited_le: list[edge] = list()
+    queue.put(edge(initial_state, goal_h[initial_state.uid]))
     while not queue.empty():
         curr_edge: edge = queue.get()
         curr_state: node = curr_edge.state
-        if curr_state in visited_n:
-            continue
-        visited_e.add(curr_edge)
-        visited_n.add(curr_state)
-        visited_l.append(curr_state)
+        visited_e[curr_state.uid] = curr_edge
+        visited_le.append(curr_edge)
         if curr_state is goal_state:
             break
         for next_edge in curr_state.edges:
-            last_visit = visited_e.intersection({next_edge})  # last visit if it exists
-            if (next_edge.state not in visited_n) or (last_visit and (next_edge < last_visit.pop())):  # check if already visited or if cost is less than last visit?
-                queue.put(next_edge)
-    return visited_l
+            next_state_uid = next_edge.state.uid
+            val = goal_h[next_state_uid] + next_edge.val
+            if next_state_uid not in visited_e or val < visited_e[next_state_uid].val + goal_h[next_state_uid]:
+                queue.put((val, next_edge))
+                visited_e[next_state_uid] = next_edge
+    return visited_le
 
 
 def gen_graph(df: pd.DataFrame, memo: dict[str, node]):
@@ -110,9 +111,6 @@ def main() -> None:
 
     df: pd.DataFrame = pd.read_csv("driving.csv").convert_dtypes(int)
     sf: pd.DataFrame = pd.read_csv("straightline.csv").convert_dtypes(int)
-
-    df_i = df[df.columns[0]]
-    sf_i = sf[sf.columns[0]]
 
     global DMEMO
     global SMEMO
